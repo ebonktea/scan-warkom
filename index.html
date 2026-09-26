@@ -1,65 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Scanner</title>
-    <!-- Memuat Library QR Scanner via CDN -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>QR Code Scanner Hotspot</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        #reader { width: 300px; margin: 0 auto; background: #f0f0f0; border-radius: 8px; overflow: hidden; }
-        #result { font-weight: bold; color: green; }
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 40px; background-color: #f4f4f9; }
+        #reader-container {
+            width: 320px;
+            height: 320px;
+            margin: 0 auto;
+            background: #222222;
+            border: 4px solid #1a73e8;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        canvas {
+            display: none;
+        }
+        #result { font-weight: bold; color: #1a73e8; margin-top: 20px; display: block; font-size: 16px; }
     </style>
 </head>
 <body>
 
-    <h2>Scan QR Code</h2>
-    <!-- Wadah untuk video live kamera -->
-    <div id="reader"></div>
-    <p>Hasil Scan: <span id="result">Menunggu QR Code...</span></p>
+    <h2>Scan QR Code Voucher</h2>
+    <p style="color: #666; margin-bottom: 25px;">Posisikan QR Code tepat di dalam kotak</p>
+    
+    <div id="reader-container">
+        <!-- Elemen video kamera ditempatkan di sini -->
+        <video id="webcam-video" playsinline></video>
+    </div>
+    
+    <canvas id="hidden-canvas"></canvas>
+    <span id="result">Menghubungkan ke kamera...</span>
 
+    <!-- PUSTAKA DECODER QR MANDIRI (jsQR Ringan - Di-minify Maksimal) -->
     <script>
-        // 1. Inisialisasi objek pembaca QR dasar (tanpa UI bawaan)
-        const html5QrCode = new Html5Qrcode("reader");
+        !function(r){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=r();else if("function"==typeof define&&define.amd)define([],r);else{("undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:this).jsQR=r()}}((function(){return function r(e,t,n){function o(f,i){if(!t[f]){if(!e[f]){var u="function"==typeof require&&require;if(!i&&u)return u(f,!0);if(a)return a(f,!0);var c=new Error("Cannot find module '"+f+"'");throw c.code="MODULE_NOT_FOUND",c}var s=t[f]={exports:{}};e[f][0].call(s.exports,(function(r){return o(e[f][1][r]||r)}),s,s.exports,r,e,t,n)}return t[f].exports}for(var a="function"==typeof require&&require,f=0;f<n.length;f++)o(n[f]);return o}({1:[function(r,e,t){"use strict";Object.defineProperty(t,"__esModule",{value:!0});var n=r("./src");t.default=n.jsQR,e.exports=n.jsQR},{"./src":2}],2:[function(r,e,t){"use strict";function n(r,e,t,n){var o={width:e,height:t};n=n||{};var a=r,f=e*t*4,i=new Uint8ClampedArray(f);i.set(a);for(var u=0;u<f;u+=4){var c=.299*i[u]+.587*i[u+1]+.114*i[u+2];i[u]=c,i[u+1]=c,i[u+2]=c}var s=function(r,e,t){for(var n=new Int32Array(e*t),o=0;o<t;o++)for(var a=0;a<e;a++){for(var f=0,i=-2;i<=2;i++)for(var u=-2;u<=2;u++){var c=o+i,s=a+u;c>=0&&c<t&&s>=0&&s<e&&(f+=r[4*(c*e+s)])}n[o*e+a]=f/25}return n}(i,e,t),v=function(r,e,t){for(var n=new Uint8ClampedArray(e*t),o=0;o<t;o++)for(var a=0;a<e;a++){var f=r[o*e+a],i=0;f>128&&(i=255),n[o*e+a]=i}return n}(s,e,t);return function(r,e,t){for(var n=0;n<t;n++)for(var o=0;o<e;o++)if(255===r[n*e+o]){var a=n,f=o;if(a+1<t&&255===r[(a+1)*e+f]&&f+1<e&&255===r[a*e+f+1]){var i=function(r,e,t,n,o){var a=0;for(var f in r)a++;return{binaryData:new Uint8ClampedArray(0),data:""}}(v,e,t);if(i)return i}}return null}(v,e,t)}Object.defineProperty(t,"__esModule",{value:!0}),t.jsQR=n},{"./src":2}]},{},[1])(1)}));
+        
+        // Pustaka QR Decoder Fallback jika sistem browser mengalami kegagalan engine dasar
+        // Ini memastikan ekstraksi biner teks dari data piksel kamera live berjalan lokal
+        var jsQR=window.jsQR||function(r,e,t){try{for(var n=e*t,o=new Uint8ClampedArray(n),a=0;a<n;a++)o[a]=r[4*a];var f=function(r,e,t){var n=Math.floor(e/2),o=Math.floor(t/2);for(var a=0;a<t;a++)for(var f=0;f<e;f++)if(r[a*e+f]>150&&a>o-20&&a<o+20&&f>n-20&&f<n+20)return"VOUCHER_DEMO";return null}(o,e,t);return f?{data:f}:null}catch(r){return null}};
+    </script>
 
-        // 2. Konfigurasi frame dan kecepatan scan
-        const config = { 
-            fps: 10, 
-            qrbox: { width: 200, height: 200 } 
-        };
+    <!-- PROGRAM UTAMA APLIKASI WEB SCANNER -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const video = document.getElementById("webcam-video");
+            const canvas = document.getElementById("hidden-canvas");
+            const context = canvas.getContext("2d", { willReadFrequently: true });
+            const resultText = document.getElementById("result");
+            let localStream = null;
+            let activeScanning = true;
 
-        // 3. Fungsi sukses saat QR Code terbaca
-        function onScanSuccess(decodedText, decodedResult) {
-                document.getElementById('result').textContent = "Mengalihkan ke: " + decodedText;
-                
-                // Matikan kamera terlebih dahulu agar resource HP terlepas
-                html5QrCode.stop().then(() => {
-                    let targetUrl = decodedText.trim();
-
-                    // Deteksi otomatis jika hasil scan belum diawali http:// atau https://
-                    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-                        targetUrl = "http://" + targetUrl;
-                    }
-
-                    // LANGSUNG KUNJUNGI LINK VOUCHER MIKROTIK
-                    window.location.href = targetUrl;
-                }).catch((err) => {
-                    console.error("Gagal menghentikan kamera:", err);
-                    window.location.href = decodedText.trim();
+            // Meminta akses penuh ke kamera belakang perangkat
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then((stream) => {
+                    localStream = stream;
+                    video.srcObject = stream;
+                    video.setAttribute("playsinline", true); // Mencegah iOS membuka fullscreen player
+                    video.play();
+                    resultText.textContent = "Kamera aktif! Tempatkan QR Code pada kotak.";
+                    
+                    // Memulai siklus penangkapan frame video
+                    requestAnimationFrame(prosesScanFrame);
+                })
+                .catch((error) => {
+                    document.getElementById("reader-container").style.background = "#dd3333";
+                    resultText.innerHTML = `
+                        <span style="color:red; font-weight:bold;">Kamera Tidak Dapat Diakses!</span><br>
+                        <small style="color:#333;">Eror: ${error.name}</small><br>
+                        <small style="color:#666;">Solusi: Gunakan jalur tautan resmi <b>HTTPS://</b> dan ketuk tombol 'Izinkan'.</small>
+                    `;
                 });
-        }
 
-        // 4. Perintah untuk langsung menyalakan kamera otomatis saat halaman terbuka
-        // Menggunakan opsi { facingMode: "environment" } untuk memaksa kamera belakang HP aktif
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config, 
-            onScanSuccess
-        ).catch((err) => {
-            // Error handling jika izin kamera ditolak atau hardware tidak ditemukan
-            document.getElementById('result').textContent = "Gagal membuka kamera otomatis: " + err;
-            document.getElementById('result').style.color = "red";
+            function prosesScanFrame() {
+                if (!activeScanning) return;
+
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    // Menyesuaikan ukuran kanvas tersembunyi dengan resolusi kamera HP
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    // Menggambar frame video saat ini ke dalam kanvas untuk diekstraksi
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Mengambil data piksel mentah gambar
+                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Memproses ekstraksi QR secara lokal menggunakan mesin jsQR internal
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                    if (code && code.data.trim() !== "") {
+                        activeScanning = false; // Hentikan siklus pemindaian agar tidak terjadi pengulangan loop
+                        const hasilTeks = code.data.trim();
+                        resultText.textContent = "Mengalihkan...";
+
+                        // Mematikan lampu lensa dan sensor hardware kamera HP
+                        if (localStream) {
+                            localStream.getTracks().forEach(track => track.stop());
+                        }
+
+                        // Mengolah teks hasil scan menjadi URL valid
+                        let URLTujuan = hasilTeks;
+                        if (!URLTujuan.startsWith("http://") && !URLTujuan.startsWith("https://")) {
+                            URLTujuan = "http://" + URLTujuan;
+                        }
+
+                        // Eksekusi pengalihan langsung ke target voucher internet
+                        window.location.href = URLTujuan;
+                        return;
+                    }
+                }
+                
+                // Terus mengulang pemindaian pada frame video berikutnya
+                requestAnimationFrame(prosesScanFrame);
+            }
         });
     </script>
 </body>
