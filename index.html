@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Login Hotspot</title>
+    <!-- Memuat Library QR Scanner via CDN -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: 20px auto; background: white; padding: 10px; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
+        .info { font-weight: bold; margin-top: 20px; color: #333; }
+    </style>
+</head>
+<body>
+
+    <h2>Scan QR Voucher Hotspot</h2>
+    <p>Dekatkan kode QR Voucher Anda ke kamera</p>
+    
+    <!-- Area Kamera Tempat Scanner Muncul -->
+    <div id="reader"></div>
+    <div class="info" id="result">Menunggu QR Code...</div>
+
+    <script>
+        function onScanSuccess(decodedText, decodedResult) {
+            // Menghentikan kamera setelah QR berhasil dibaca
+            html5QrcodeScanner.clear();
+            document.getElementById('result').innerText = "Mengalihkan ke Hotspot: " + decodedText;
+
+            // ALUR LOGIN MIKROTIK: 
+            // Mengarahkan HP pengguna ke IP Mikrotik Anda sambil membawa kode voucher hasil scan
+            // Silakan sesuaikan IP Mikrotik Anda (default biasanya 192.168.88.1)
+            const mikrotikIP = "http://192.168.88";
+            window.location.href = `${mikrotikIP}?username=${decodedText}&password=${decodedText}`;
+        }
+
+        function onScanFailure(error) {
+            // Diabaikan agar kamera terus memindai secara live sampai sukses
+        }
+
+        // Menjalankan Scanner otomatis saat halaman terbuka
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: {width: 250, height: 250} }, /* verbose= */ false
+        );
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    </script>
+</body>
+</html>
