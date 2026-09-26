@@ -1,63 +1,84 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
     <!-- Memuat Library QR Scanner via CDN -->
-    <script src="https://unpkg.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f9f9f9; }
-        #reader { width: 300px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        #result { font-weight: bold; color: #1a73e8; margin-top: 15px; display: block; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #reader {
+            width: 300px;
+            margin: 0 auto;
+            background: #f0f0f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #result {
+            font-weight: bold;
+            color: green;
+        }
     </style>
 </head>
+
 <body>
 
     <h2>Scan QR Code</h2>
     <!-- Wadah untuk video live kamera -->
     <div id="reader"></div>
-    <span id="result">Menunggu QR Code...</span>
+    <p>Hasil Scan: <span id="result">Menunggu QR Code...</span></p>
 
     <script>
+        // 1. Inisialisasi objek pembaca QR dasar (tanpa UI bawaan)
         const html5QrCode = new Html5Qrcode("reader");
-        const config = { 
-            fps: 10, 
-            qrbox: { width: 220, height: 220 } 
+
+        // 2. Konfigurasi frame dan kecepatan scan
+        const config = {
+            fps: 10,
+            qrbox: { width: 200, height: 200 }
         };
 
+        // 3. Fungsi sukses saat QR Code terbaca
         function onScanSuccess(decodedText, decodedResult) {
             document.getElementById('result').textContent = "Mengalihkan ke: " + decodedText;
-            
+
             // Matikan kamera terlebih dahulu agar resource HP terlepas
             html5QrCode.stop().then(() => {
-                // Membersihkan teks whitespace yang tidak sengaja terbawa
                 let targetUrl = decodedText.trim();
 
                 // Deteksi otomatis jika hasil scan belum diawali http:// atau https://
                 if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-                    // Jika isi QR hanya berupa "192.168.88.1/login?..." kita tambahkan http:// otomatis
                     targetUrl = "http://" + targetUrl;
                 }
 
-                // LANGSUNG KUNJUNGI LINK
+                // LANGSUNG KUNJUNGI LINK VOUCHER MIKROTIK
                 window.location.href = targetUrl;
             }).catch((err) => {
                 console.error("Gagal menghentikan kamera:", err);
-                // Tetap alihkan halaman meskipun fungsi stop kamera mendapati error kecil
                 window.location.href = decodedText.trim();
             });
         }
 
-        // Jalankan kamera otomatis saat web terbuka (kamera belakang)
+        // 4. Perintah untuk langsung menyalakan kamera otomatis saat halaman terbuka
+        // Menggunakan opsi { facingMode: "environment" } untuk memaksa kamera belakang HP aktif
         html5QrCode.start(
-            { facingMode: "environment" }, 
-            config, 
+            { facingMode: "environment" },
+            config,
             onScanSuccess
         ).catch((err) => {
-            document.getElementById('result').textContent = "Gagal membuka kamera otomatis. Pastikan izin kamera diberikan.";
+            // Error handling jika izin kamera ditolak atau hardware tidak ditemukan
+            document.getElementById('result').textContent = "Gagal membuka kamera otomatis: " + err;
             document.getElementById('result').style.color = "red";
         });
     </script>
 </body>
+
 </html>
