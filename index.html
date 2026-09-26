@@ -1,13 +1,36 @@
-    <script>
-        // Memastikan skrip baru berjalan setelah halaman web sepenuhnya selesai dimuat
-        document.addEventListener("DOMContentLoaded", () => {
-            const html5QrCode = new Html5Qrcode("reader");
-            const config = { 
-                fps: 10, 
-                qrbox: { width: 220, height: 220 } 
-            };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <!-- Memuat Library QR Scanner via CDN -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        #reader { width: 300px; margin: 0 auto; background: #f0f0f0; border-radius: 8px; overflow: hidden; }
+        #result { font-weight: bold; color: green; }
+    </style>
+</head>
+<body>
 
-            function onScanSuccess(decodedText, decodedResult) {
+    <h2>Scan QR Code</h2>
+    <!-- Wadah untuk video live kamera -->
+    <div id="reader"></div>
+    <p>Hasil Scan: <span id="result">Menunggu QR Code...</span></p>
+
+    <script>
+        // 1. Inisialisasi objek pembaca QR dasar (tanpa UI bawaan)
+        const html5QrCode = new Html5Qrcode("reader");
+
+        // 2. Konfigurasi frame dan kecepatan scan
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 200, height: 200 } 
+        };
+
+        // 3. Fungsi sukses saat QR Code terbaca
+        function onScanSuccess(decodedText, decodedResult) {
                 document.getElementById('result').textContent = "Mengalihkan ke: " + decodedText;
                 
                 // Matikan kamera terlebih dahulu agar resource HP terlepas
@@ -25,23 +48,19 @@
                     console.error("Gagal menghentikan kamera:", err);
                     window.location.href = decodedText.trim();
                 });
-            }
+        }
 
-            // Jalankan kamera otomatis (Kamera Belakang)
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                onScanSuccess
-            ).then(() => {
-                // Jika kamera berhasil menyala, ubah teks indikator
-                document.getElementById('result').textContent = "Arahkan kamera ke QR Code Voucher";
-            }).catch((err) => {
-                // Menampilkan alasan detail di layar jika kamera gagal terbuka
-                document.getElementById('result').innerHTML = `
-                    <span style="color:red;">Gagal membuka kamera!</span><br>
-                    <small style="color:#666; font-weight:normal;">Penyebab: ${err}</small>
-                `;
-                console.error("Error Kamera:", err);
-            });
+        // 4. Perintah untuk langsung menyalakan kamera otomatis saat halaman terbuka
+        // Menggunakan opsi { facingMode: "environment" } untuk memaksa kamera belakang HP aktif
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            config, 
+            onScanSuccess
+        ).catch((err) => {
+            // Error handling jika izin kamera ditolak atau hardware tidak ditemukan
+            document.getElementById('result').textContent = "Gagal membuka kamera otomatis: " + err;
+            document.getElementById('result').style.color = "red";
         });
     </script>
+</body>
+</html>
